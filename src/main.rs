@@ -35,7 +35,8 @@ fn main() -> Result<()> {
     builder
         .board_size(opt.n)
         .crop_image(opt.crop)
-        .terminal_size(terminal::size()?);
+        .terminal_size(terminal::size()?)
+        .true_color(true_color_is_enabled());
     if let Some(file) = opt.file {
         builder.image(file);
     }
@@ -108,4 +109,13 @@ fn cleanup_terminal<W: Write>(mut w: W) -> Result<()> {
     terminal::disable_raw_mode()?;
 
     Ok(())
+}
+
+fn true_color_is_enabled() -> bool {
+    std::env::var("COLORTERM")
+        .map(|colorterm| match &colorterm[..] {
+            "truecolor" | "24bit" => true,
+            _ => false,
+        })
+        .unwrap_or(false)
 }

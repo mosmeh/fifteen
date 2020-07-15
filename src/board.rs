@@ -163,6 +163,7 @@ pub struct BoardBuilder {
     crop_image: bool,
     terminal_size: (u16, u16),
     board_size: usize,
+    true_color: bool,
 }
 
 impl BoardBuilder {
@@ -172,6 +173,7 @@ impl BoardBuilder {
             crop_image: false,
             terminal_size: (80, 24),
             board_size: 4,
+            true_color: false,
         }
     }
 
@@ -192,7 +194,12 @@ impl BoardBuilder {
             return Err(anyhow::anyhow!("n is too large"));
         }
 
-        let pixels = load_image(self.image.as_ref(), img_size as u32, self.crop_image)?;
+        let pixels = load_image(
+            self.image.as_ref(),
+            img_size as u32,
+            self.crop_image,
+            self.true_color,
+        )?;
 
         let tiles = generate_tiles(self.board_size);
         assert!(is_solvable(self.board_size, &tiles));
@@ -225,11 +232,36 @@ impl BoardBuilder {
         self.board_size = board_size;
         self
     }
+
+    pub fn true_color(&mut self, yes: bool) -> &mut Self {
+        self.true_color = yes;
+        self
+    }
 }
 
 static DEFAULT_IMAGE: &[u8] = include_bytes!("../img/default.png");
 
-fn load_image<P: AsRef<Path>>(path: Option<P>, size: u32, crop: bool) -> Result<Vec<Color>> {
+fn convert_color(data: &image::Rgba<u8>, true_color: bool) -> Color {
+    if data[3] == 0 {
+        Color::Reset
+    } else if true_color {
+        Color::Rgb {
+            r: data[0],
+            g: data[1],
+            b: data[2],
+        }
+    } else {
+        let ansi_color = ansi_colours::ansi256_from_rgb((data[0], data[1], data[2]));
+        Color::AnsiValue(ansi_color)
+    }
+}
+
+fn load_image<P: AsRef<Path>>(
+    path: Option<P>,
+    size: u32,
+    crop: bool,
+    true_color: bool,
+) -> Result<Vec<Color>> {
     let mut img = if let Some(path) = path {
         image::io::Reader::open(path)?
             .with_guessed_format()?
@@ -247,17 +279,7 @@ fn load_image<P: AsRef<Path>>(path: Option<P>, size: u32, crop: bool) -> Result<
 
     let pixels: Vec<_> = img
         .pixels()
-        .map(|(_, _, data)| {
-            if data[3] == 0 {
-                Color::Reset
-            } else {
-                Color::Rgb {
-                    r: data[0],
-                    g: data[1],
-                    b: data[2],
-                }
-            }
-        })
+        .map(|(_, _, data)| convert_color(&data, true_color))
         .collect();
 
     let (width, height) = img.dimensions();

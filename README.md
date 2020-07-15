@@ -6,9 +6,7 @@ The 15-puzzle in terminal
 
 ![](img/screenshot.gif)
 
-It uses half blocks (▀ and ▄) and 24-bit true colors to draw pixels in terminal.
-
-Refer to [this gist](https://gist.github.com/XVilka/8346728) to see which terminals support true colors.
+It uses half blocks (▀ and ▄) to draw pixels in terminal.
 
 ## Installation
 
@@ -39,6 +37,14 @@ Play on 3 x 3 board (i.e. 8-puzzle):
 ```sh
 fifteen -n 3
 ```
+
+## Colors
+
+It supports terminals with and without 24-bit true colors.
+
+Make sure the variable `$COLORTERM` is set to `truecolor` or `24bit` to enable true colors.
+
+Refer to [this gist](https://gist.github.com/XVilka/8346728) to see which terminals support true colors.
 
 ## Command-line options
 
